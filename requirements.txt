@@ -2,3 +2,5 @@ requests
 beautifulsoup4
 langchain-community
 google-search-results
+langchain-core
+langchain-openai
