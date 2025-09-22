@@ -11,8 +11,8 @@ from web_search_lib import WebSearcher
 # os.environ["VSEGPT_API_KEY"] = "sk-or-vv-..."
 # os.environ["SERPER_API_KEY"] = "..."
 
-OPENAI_BASE_URL = "https://api.vsegpt.ru:7090/v1"
-OPENAI_API_KEY = "sk-or-vv-1daecb5eff46d5eee1deac9abab6718231f0d4365013135dea8543a641e5632d"
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 DEFAULT_MODEL = "google/gemini-2.5-pro"
 # DEFAULT_QUERY = "сотрудник идет в отпуск в январе 2025 расчетный период 2024 год Среднедневной заработок составил 680,48 нужно ли доводить отпускные до МРОТ 2025"
