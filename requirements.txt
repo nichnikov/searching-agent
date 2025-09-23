@@ -4,3 +4,6 @@ langchain-community
 google-search-results
 langchain-core
 langchain-openai
+python-dotenv
+Scrapy
+scrapy-playwright

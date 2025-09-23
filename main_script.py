@@ -11,12 +11,12 @@ from web_search_lib import WebSearcher
 # os.environ["VSEGPT_API_KEY"] = "sk-or-vv-..."
 # os.environ["SERPER_API_KEY"] = "..."
 
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") 
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 DEFAULT_MODEL = "google/gemini-2.5-pro"
-# DEFAULT_QUERY = "сотрудник идет в отпуск в январе 2025 расчетный период 2024 год Среднедневной заработок составил 680,48 нужно ли доводить отпускные до МРОТ 2025"
-DEFAULT_QUERY = "Здравствуйте.Строка 130 отчета 6НДФЛ вычеты и расходы.Вычеты это стандартные,а расходы что?-Больничные, материальная помощь?"
+DEFAULT_QUERY = "сотрудник идет в отпуск в январе 2025 расчетный период 2024 год Среднедневной заработок составил 680,48 нужно ли доводить отпускные до МРОТ 2025"
+
 # Шаблон промпта, который будет заполнен результатами поиска
 PROMPT_TEMPLATE = """
 Твоя задача - помочь бухгалтеру, предоставив четкую рекомендацию на основе найденной в интернете информации.
@@ -125,3 +125,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    
