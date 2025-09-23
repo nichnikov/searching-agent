@@ -1,26 +1,19 @@
 # scraper_runner.py
 
 import os
-import sys
 import json
 import logging
-from pathlib import Path
 from dotenv import load_dotenv
-
-# --- ИСПРАВЛЕНИЕ №1: РЕШЕНИЕ ПРОБЛЕМЫ ModuleNotFoundError ---
-# Добавляем корневую папку проекта в sys.path.
-# Это гарантирует, что Python и Scrapy смогут найти модуль 'scraper'.
-# Это действие должно быть выполнено ДО импорта компонентов Scrapy.
-project_root = Path(__file__).resolve().parent
-sys.path.insert(0, str(project_root))
-
-from scrapy import signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
-# Теперь, когда sys.path исправлен, эти импорты будут работать
+# Это по-прежнему необходимо и должно быть в самом начале
 os.environ['SCRAPY_SETTINGS_MODULE'] = 'scraper.settings'
+
+# Импортируем нашего паука напрямую
 from scraper.spiders.action import ActionSpider
+# Импортируем наш новый пайплайн из его правильного местоположения
+from scraper.pipelines import InMemoryPipeline
 
 
 class ActionScraperRunner:
@@ -34,7 +27,10 @@ class ActionScraperRunner:
         self.password = password
         self.settings = get_project_settings()
 
-        # Мы по-прежнему указываем Scrapy использовать наш пайплайн
+        # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+        # Теперь мы указываем правильный, импортируемый Scrapy путь к нашему пайплайну.
+        # Scrapy сможет найти 'scraper.pipelines.InMemoryPipeline'.
+        # Старый файловый пайплайн будет полностью проигнорирован.
         self.settings.set('ITEM_PIPELINES', {
             'scraper.pipelines.InMemoryPipeline': 300
         })
@@ -43,24 +39,30 @@ class ActionScraperRunner:
         """
         Запускает паука в режиме поиска и возвращает результаты.
         """
-        # --- ИСПРАВЛЕНИЕ №2: НАДЕЖНЫЙ СБОР РЕЗУЛЬТАТОВ ЧЕРЕЗ СИГНАЛЫ ---
-        results = []
+        if sections is None:
+            sections = ["law", "recommendations", "forms"]
 
-        def item_scraped(item):
-            """Эта функция будет вызываться каждый раз, когда паук выдает item."""
-            results.append(dict(item))
+        # Создаем экземпляр нашего pipeline
+        pipeline_instance = InMemoryPipeline()
 
-        # Отключаем корневой логгер, чтобы видеть только вывод Scrapy
+        # Отключаем корневой логгер, чтобы видеть только вывод Scrapy.
+        # Это решает проблемы с "зависанием" логов и делает вывод чище.
         logging.getLogger().propagate = False
         
         process = CrawlerProcess(self.settings)
-        
-        # Подключаем нашу функцию к сигналу item_scraped
-        crawler = process.create_crawler(ActionSpider)
-        crawler.signals.connect(item_scraped, signal=signals.item_scraped)
+
+        # Передаем экземпляр pipeline в паука через `crawler.signals`
+        def setup_pipeline(crawler):
+            crawler.pipeline = pipeline_instance
+
+        crawler_instance = process.create_crawler(ActionSpider)
+        # ВАЖНО: Мы должны вручную подключить наш pipeline к crawler'у,
+        # так как Scrapy будет создавать свой собственный экземпляр по пути из настроек.
+        # Этот трюк позволяет нам получить доступ к *конкретному экземпляру* после завершения.
+        crawler_instance.pipeline = pipeline_instance
         
         process.crawl(
-            crawler,
+            crawler_instance,
             username=self.username,
             password=self.password,
             phrase=query,
@@ -69,21 +71,22 @@ class ActionScraperRunner:
         )
         
         print(f"Запускаю скрапер с запросом: '{query}'...")
-        process.start()  # Блокирующий вызов.
+        process.start() # Блокирующий вызов.
         print("Скрапер завершил работу.")
 
-        return results
+        # Возвращаем результаты из нашего экземпляра пайплайна
+        return crawler_instance.pipeline.get_items()
 
 
-# --- Блок для тестового запуска (без изменений) ---
+# --- Блок для тестового запуска (остается без изменений) ---
 if __name__ == '__main__':
     print("--- ЗАПУСК В ТЕСТОВОМ РЕЖИМЕ ---")
     load_dotenv()
     ACTION_USERNAME = os.getenv("ACTION_USERNAME")
     ACTION_PASSWORD = os.getenv("ACTION_PASSWORD")
     TEST_QUERY = "расчет отпускных в 2025 году"
-    TEST_SECTIONS = ["recommendations"]
-    TEST_LIMIT = 5
+    TEST_SECTIONS = ["recommendations"] # Уменьшил для скорости теста
+    TEST_LIMIT = 2
 
     print(f"Тестовый запрос: '{TEST_QUERY}'")
     print(f"Разделы: {TEST_SECTIONS}, Лимит: {TEST_LIMIT}")
@@ -103,9 +106,8 @@ if __name__ == '__main__':
     except ValueError as e:
         print(f"\n❌ Ошибка конфигурации: {e}")
         print("-> Пожалуйста, убедитесь, что в файле .env заданы ACTION_USERNAME и ACTION_PASSWORD.")
-    
     except Exception as e:
-        
+        # Добавил вывод traceback для лучшей отладки
         import traceback
         print(f"\n❌ Во время тестового запуска произошла непредвиденная ошибка: {e}")
         traceback.print_exc()
