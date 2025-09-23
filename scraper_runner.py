@@ -81,9 +81,11 @@ if __name__ == '__main__':
     load_dotenv()
     ACTION_USERNAME = os.getenv("ACTION_USERNAME")
     ACTION_PASSWORD = os.getenv("ACTION_PASSWORD")
-    TEST_QUERY = "расчет отпускных в 2025 году"
+    
+    TEST_QUERY = "Добрый день! Такой вопрос. У нас ИП на НДС. У нас с нового года в кассовых чеках при оплате наличными от юр.лиц пишется без НДС. Это правильно или так не должно быть."
+    
     TEST_SECTIONS = ["recommendations"]
-    TEST_LIMIT = 5
+    TEST_LIMIT = 20
 
     print(f"Тестовый запрос: '{TEST_QUERY}'")
     print(f"Разделы: {TEST_SECTIONS}, Лимит: {TEST_LIMIT}")
@@ -94,9 +96,9 @@ if __name__ == '__main__':
         results = runner.search(query=TEST_QUERY, sections=TEST_SECTIONS, limit=TEST_LIMIT)
 
         if results:
-            print(f"\n✅ Тестовый запуск успешен! Найдено {len(results)} элементов.")
             print("--- Результаты ---")
             print(json.dumps(results, indent=2, ensure_ascii=False))
+            print(f"\n✅ Тестовый запуск успешен! Найдено {len(results)} элементов.")
         else:
             print("\n⚠️ Тестовый запуск завершился, но не нашел элементов. Проверьте запрос или доступность сайта.")
 
