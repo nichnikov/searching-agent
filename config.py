@@ -20,6 +20,11 @@ DEFAULT_QUERY = (
 DEFAULT_SECTIONS = "law,recommendations"
 DEFAULT_LIMIT = 15
 
+# --- Настройки для Yandex Search API ---
+YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
+YANDEX_OAUTH_TOKEN = os.getenv("YANDEX_OAUTH_TOKEN")
+
+
 # Проверка наличия обязательных переменных окружения
 if not all([ACTION_USERNAME, ACTION_PASSWORD, OPENAI_API_KEY, SERPER_API_KEY]):
     raise ValueError(

@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List, Dict
 
 class BaseSearcher(ABC):
     """Абстрактный базовый класс для всех поисковых систем."""
 
     @abstractmethod
-    def search(self, query: str, **kwargs: Any) -> Any:
+    def search(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
         """
         Выполняет поиск по заданному запросу.
 
@@ -14,6 +14,7 @@ class BaseSearcher(ABC):
             **kwargs: Дополнительные параметры для конкретной реализации.
 
         Returns:
-            Результаты поиска в виде строки или структурированных данных.
+            Список словарей, где каждый словарь представляет найденный
+            материал и содержит как минимум ключи 'url', 'title', 'content'.
         """
         pass
