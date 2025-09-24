@@ -4,11 +4,11 @@ import argparse
 import os
 import json
 from dotenv import load_dotenv
-from web_search_lib import WebSearcher
+from searchers.google_searcher import WebSearcher
 
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from scraper_runner import ActionScraperRunner # <-- НАШ НОВЫЙ ИМПОРТ
+from searchers.scraper_runner import ActionScraperRunner # <-- НАШ НОВЫЙ ИМПОРТ
 
 # Загружаем переменные из .env файла (рекомендуется)
 load_dotenv()

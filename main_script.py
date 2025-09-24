@@ -4,7 +4,7 @@ import json
 
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from web_search_lib import WebSearcher
+from searchers.google_searcher import WebSearcher
 
 # --- Настройки ---
 # Рекомендуется вынести ключи в переменные окружения для безопасности

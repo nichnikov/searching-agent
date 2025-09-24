@@ -19,8 +19,8 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 # Теперь, когда sys.path исправлен, эти импорты будут работать
-os.environ['SCRAPY_SETTINGS_MODULE'] = 'scraper.settings'
-from scraper.spiders.action import ActionSpider
+os.environ['SCRAPY_SETTINGS_MODULE'] = 'searchers.action_scraper.settings'
+from action_scraper.spiders.action import ActionSpider
 
 
 class ActionScraperRunner:
@@ -36,7 +36,7 @@ class ActionScraperRunner:
 
         # Мы по-прежнему указываем Scrapy использовать наш пайплайн
         self.settings.set('ITEM_PIPELINES', {
-            'scraper.pipelines.InMemoryPipeline': 300
+            'searchers.action_scraper.pipelines.InMemoryPipeline': 300
         })
 
     def search(self, query: str, sections: list[str] = None, limit: int = 5) -> list[dict]:

@@ -1,0 +1,28 @@
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
+
+# --- Настройки API и моделей ---
+ACTION_USERNAME = os.getenv("ACTION_USERNAME")
+ACTION_PASSWORD = os.getenv("ACTION_PASSWORD")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY") # Добавляем ключ для Serper
+
+# --- Настройки по умолчанию для argparse ---
+DEFAULT_MODEL = "google/gemini-2.5-pro"
+DEFAULT_QUERY = (
+    "Добрый день! Такой вопрос. У нас ИП на НДС. У нас с нового года в кассовых чеках "
+    "при оплате наличными от юр.лиц пишется без НДС. Это правильно или так не должно быть."
+)
+DEFAULT_SECTIONS = "law,recommendations"
+DEFAULT_LIMIT = 15
+
+# Проверка наличия обязательных переменных окружения
+if not all([ACTION_USERNAME, ACTION_PASSWORD, OPENAI_API_KEY, SERPER_API_KEY]):
+    raise ValueError(
+        "Необходимо задать все обязательные переменные окружения в файле .env: "
+        "ACTION_USERNAME, ACTION_PASSWORD, OPENAI_API_KEY, SERPER_API_KEY"
+    )
