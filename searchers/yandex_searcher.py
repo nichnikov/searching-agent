@@ -80,13 +80,11 @@ class YandexSearcher(BaseSearcher):
             title = item.get("title", "Без заголовка")
             url = item.get("url", "Ссылка отсутствует")
             content = item.get("content", "Содержимое отсутствует")
-            
-            content_preview = (content[:3500] + '...') if len(content) > 3500 else content
 
             formatted_string += f"Источник #{i}:\n"
             formatted_string += f"  Название: {title}\n"
             formatted_string += f"  Ссылка: {url}\n"
-            formatted_string += f"  Содержимое:\n\"\"\"\n{content_preview}\n\"\"\"\n\n"
+            formatted_string += f"  Содержимое:\n\"\"\"\n{content}\n\"\"\"\n\n"
         
         return formatted_string
 

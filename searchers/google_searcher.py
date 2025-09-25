@@ -80,12 +80,10 @@ class WebSearcher(BaseSearcher):
             content = item.get("content", "Содержимое отсутствует")
             
             # Обрезаем контент для экономии токенов
-            content_preview = (content[:3500] + '...') if len(content) > 3500 else content
-
             formatted_string += f"Источник #{i}:\n"
             formatted_string += f"  Название: {title}\n"
             formatted_string += f"  Ссылка: {url}\n"
-            formatted_string += f"  Содержимое:\n\"\"\"\n{content_preview}\n\"\"\"\n\n"
+            formatted_string += f"  Содержимое:\n\"\"\"\n{content}\n\"\"\"\n\n"
         
         return formatted_string
 
@@ -104,8 +102,11 @@ class WebSearcher(BaseSearcher):
         print(f"Выполняю поиск в интернете (топ {num_results} результатов)...")
 
         try:
+            # Устанавливаем количество результатов через атрибут 'k' перед вызовом
+            self.search_wrapper.k = num_results
             search_results = self.search_wrapper.results(query)
-            
+            print(f"Найдено результатов: {len(search_results.get('organic', []))}")
+
             if "organic" not in search_results or not search_results["organic"]:
                 return "Поиск в интернете не дал органических результатов."
 
@@ -125,7 +126,7 @@ class WebSearcher(BaseSearcher):
                     "content": scraped_text
                 })
             
-            return self._format_results(processed_items)
+            return processed_items
 
         except Exception as e:
             error_message = f"Произошла общая ошибка при поиске в интернете: {e}"
@@ -146,13 +147,13 @@ if __name__ == '__main__':
         # Инициализация с использованием переменной окружения SERPER_API_KEY
         searcher = WebSearcher()
         
-        test_query = "когда сдавать баланс за 2024 год в ГИР БО"
+        test_query = "кто президент Эфиопии в 2010 году"
         
         # Вызов основного метода search
-        formatted_string_results = searcher.search(test_query, num_results=3)
+        formatted_string_results = searcher.search(test_query, num_results=15)
 
         print("\n--- РЕЗУЛЬТАТ (отформатированная строка для LLM) ---")
-        print(formatted_string_results)
+        # print(formatted_string_results)
         print("-------------------------------------------------")
 
     except ValueError as e:

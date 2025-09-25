@@ -14,7 +14,7 @@ def format_search_results(results: List[Dict], source_name: str) -> str:
         content = item.get("content", "Содержимое отсутствует")
 
         # Обрезаем контент для экономии токенов
-        content_preview = (content[:2500] + '...') if len(content) > 2500 else content
+        content_preview = content
 
         formatted_string += f"Источник #{i}:\n"
         formatted_string += f"  Название: {title}\n"
