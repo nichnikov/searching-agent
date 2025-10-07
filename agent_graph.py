@@ -1,5 +1,7 @@
-import argparse
+import os
 import json
+import argparse
+
 from typing import List, Dict, Any, TypedDict, Annotated
 from datetime import datetime
 import operator
@@ -260,21 +262,7 @@ class LangGraphPipeline:
         self._save_results_to_json(final_state)
         
         return final_state
-        """
-        # Используем stream для вывода промежуточных шагов
-        for event in self.graph.stream(initial_state):
-            # event содержит {'node_name': {'output_key': 'output_value'}}
-            # Можно добавить логирование, если нужно
-            for key, value in event.items():
-                print(f"--- Вывод узла: {key} ---")
-                # print(value) # раскомментировать для детального вывода
-                
-            final_state = list(event.values())[-1]
-
-        self._print_final_result(final_state)
-        self._save_results_to_json(final_state)
-        
-        return final_state"""
+       
 
     def _print_final_result(self, final_state: GraphState):
             """Выводит итоговый ответ в консоль."""
@@ -295,7 +283,7 @@ class LangGraphPipeline:
         state_to_save = final_state.copy()
 
         try:
-            with open(filename, 'w', encoding='utf-8') as f:
+            with open(os.path.join("data", filename), 'w', encoding='utf-8') as f:
                 json.dump(state_to_save, f, ensure_ascii=False, indent=4)
             print(f"\n[ИНФО] Полный лог выполнения сохранен в файл: {filename}")
         except Exception as e:
