@@ -18,7 +18,7 @@ from langgraph.graph import StateGraph, END
 # --- Промпты для узлов графа ---
 
 SEARCH_QUERY_GENERATOR_PROMPT = """
-На основе следующего запроса пользователя, сгенерируй 3 наиболее эффективных и различных поисковых запроса для веб-поиска.
+На основе следующего запроса пользователя, сгенерируй от 3х до 5-ти наиболее эффективных и различных поисковых запроса для веб-поиска.
 Не добавляй ничего лишнего, только сами запросы, каждый на новой строке.
 
 Запрос пользователя: "{query}"
@@ -34,6 +34,7 @@ RESULTS_ANALYZER_PROMPT = """
 Результаты поиска:
 {search_results}
 
+
 Твоя задача — вернуть JSON-объект со следующей структурой:
 {{
   "relevant_ids": [список id релевантныx результатов, например [0, 2, 4]],
@@ -47,8 +48,18 @@ FINAL_ANSWER_GENERATOR_PROMPT = """
 
 Запрос пользователя: "{query}"
 
-Результаты поиска:
-{search_results}
+
+Инструкция:
+
+1. Вынеси вопрос в заголовок статьи
+2. Внимательно изучи материалы из Интернета: {search_results}
+3. Если в материалах содержится информация, отвечающая на бухгалтерский вопрос, напиши статью. 
+4. Если в материалах нет прямого ответа, сообщи, что нет ответа на заданный вопрос и откажись от написания статьи.
+5. После текста статьи приведи пронумерованные источники (номер, наименование статьи, url по которому можно перейти на источник)
+6. После каждого абзаца текста статьи укажи ссылку на источник в квадратных скобках
+7. Приведи список источников в конце статьи с наименованием и ссылкой (url)
+
+
 
 Финальный ответ:
 """
@@ -221,7 +232,9 @@ class LangGraphPipeline:
         return "RETRY"
 
     def run(self, query: str):
-        """Запускает полный цикл обработки запроса."""
+        """
+        Запускает полный цикл обработки запроса.
+        """
         initial_state = GraphState(
             original_query=query,
             search_queries=[],
@@ -232,7 +245,22 @@ class LangGraphPipeline:
             final_answer=""
         )
         
-        final_state = None
+        print(f"Обработка запроса: '{query}'")
+        
+        # ИСПОЛЬЗУЕМ .invoke() ДЛЯ ПОЛУЧЕНИЯ ПОЛНОГО ФИНАЛЬНОГО СОСТОЯНИЯ
+        # Все print() внутри узлов будут выведены в консоль в процессе выполнения.
+        final_state = self.graph.invoke(initial_state)
+
+        # Если в конце работы граф остановился из-за ошибки или лимита попыток,
+        # а финальный ответ не был сгенерирован, установим заглушку.
+        if not final_state.get('final_answer'):
+            final_state['final_answer'] = "Не удалось сгенерировать ответ на основе имеющейся информации."
+
+        self._print_final_result(final_state)
+        self._save_results_to_json(final_state)
+        
+        return final_state
+        """
         # Используем stream для вывода промежуточных шагов
         for event in self.graph.stream(initial_state):
             # event содержит {'node_name': {'output_key': 'output_value'}}
@@ -246,24 +274,24 @@ class LangGraphPipeline:
         self._print_final_result(final_state)
         self._save_results_to_json(final_state)
         
-        return final_state
+        return final_state"""
 
     def _print_final_result(self, final_state: GraphState):
-        """Выводит итоговый ответ в консоль."""
-        print("\n" + "#" * 60)
-        print("###" + " " * 22 + "ИТОГИ ВЫПОЛНЕНИЯ" + " " * 22 + "###")
-        print("#" * 60)
+            """Выводит итоговый ответ в консоль."""
+            print("\n" + "#" * 60)
+            print("###" + " " * 22 + "ИТОГИ ВЫПОЛНЕНИЯ" + " " * 22 + "###")
+            print("#" * 60)
 
-        print("\n" + "="*23 + " ФИНАЛЬНЫЙ ОТВЕТ " + "="*23)
-        print(final_state['final_answer'])
-        print("="*60)
+            print("\n" + "="*23 + " ФИНАЛЬНЫЙ ОТВЕТ " + "="*23)
+            print(final_state['final_answer'])
+            print("="*60)
         
     def _save_results_to_json(self, final_state: GraphState):
         """Сохраняет все запросы и результаты в JSON файл."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"search_log_{timestamp}.json"
         
-        # Создаем копию состояния для сохранения, чтобы избежать проблем с сериализацией
+        # Теперь final_state содержит все поля из GraphState
         state_to_save = final_state.copy()
 
         try:
@@ -272,7 +300,6 @@ class LangGraphPipeline:
             print(f"\n[ИНФО] Полный лог выполнения сохранен в файл: {filename}")
         except Exception as e:
             print(f"\n[ОШИБКА] Не удалось сохранить лог в файл: {e}")
-
 
 # --- Фабрика и Main (остаются почти без изменений) ---
 
