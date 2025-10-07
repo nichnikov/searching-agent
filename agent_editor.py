@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 import config
 from llm.llm_handler import LLMHandler
-from prompts.templates import EDITOR_AGENT_PROMPT # COMPARE_ANSWERS_PROMPT_SECOND больше не нужен
+from prompts.templates import EDITOR_AGENT_PROMPT #ACCOUNTING_AGENT_PROMPT COMPARE_ANSWERS_PROMPT_SECOND больше не нужен
 from searchers.combined_web_searcher import CombinedWebSearcher
 # Для ясности переименуем импорт, чтобы было понятно, что это поисковик Google
 from searchers.google_searcher import WebSearcher as GoogleSearcher
@@ -27,7 +27,11 @@ class WebSearchPipeline:
         # --- Этап 1: Поиск в Интернете (Google + Yandex) ---
         print("\n" + "="*20 + " ЭТАП 1: ПОИСК В ИНТЕРНЕТЕ " + "="*20)
         web_search_results = self.web_searcher.search(query=query, num_results=limit)
-
+        
+        if not web_search_results:
+            print("Поиск в вебе не дал результатов. Завершаю работу.")
+            return "К сожалению, не удалось найти информацию по вашему запросу в интернете."
+        
         # --- Этап 2: Генерация ответа на основе найденного ---
         print("\n" + "="*20 + " ЭТАП 2: ГЕНЕРАЦИЯ ОТВЕТА " + "="*20)
         final_answer = self._generate_answer_from_web(query, web_search_results)
@@ -44,6 +48,7 @@ class WebSearchPipeline:
         
         print(f"Генерация ответа на основе поиска в '{source_name}'...")
         prompt = EDITOR_AGENT_PROMPT.format(query=query, search_results=formatted_text)
+        # prompt = ACCOUNTING_AGENT_PROMPT.format(query=query, search_results=formatted_text)
         answer = self.llm_handler.get_response(prompt)
         print("✅ Ответ на основе веб-поиска получен.")
         return answer
@@ -78,9 +83,11 @@ class ComponentFactory:
         включая всех доступных внешних провайдеров.
         """
         web_searcher_instances = []
+        '''
         if config.SERPER_API_KEY:
             web_searcher_instances.append(GoogleSearcher())
-            print("Google Search провайдер активирован.")
+            print("Google Search провайдер активирован.")'''
+        
         if config.YANDEX_FOLDER_ID and config.YANDEX_OAUTH_TOKEN:
             web_searcher_instances.append(YandexSearcher(
                 folder_id=config.YANDEX_FOLDER_ID, 

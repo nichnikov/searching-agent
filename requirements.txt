@@ -9,3 +9,4 @@ Scrapy
 scrapy-playwright
 yandex_search_api==0.1.8
 lxml[html_clean]
+langgraph

@@ -129,6 +129,7 @@ class YandexSearcher(BaseSearcher):
 
 # --- Блок для независимого тестирования модуля ---
 if __name__ == '__main__':
+    import config
     from dotenv import load_dotenv
 
     load_dotenv()
@@ -141,13 +142,17 @@ if __name__ == '__main__':
         print("\nОшибка: Переменные окружения YANDEX_FOLDER_ID и YANDEX_OAUTH_TOKEN не установлены.")
     else:
         try:
-            searcher = YandexSearcher(folder_id=FOLDER_ID, oauth_token=OAUTH_TOKEN)
-            test_query = "когда сдавать баланс за 2024 год в ГИР БО"
+            # searcher = YandexSearcher(folder_id=FOLDER_ID, oauth_token=OAUTH_TOKEN)
+            searcher = YandexSearcher(folder_id=config.YANDEX_FOLDER_ID, 
+                                        oauth_token=config.YANDEX_OAUTH_TOKEN)
+            test_query = """ФСБУ 9/2025 ввели в действие в середине года.  Приведи обоснование, что компания может его применять с 1 января 2025 года, то есть задним числом. В каком периоде делать проводки по переходу: на дату принятия ФСБУ или на последнее число года? 
+            Как корректировать учет с начала 2025 года до перехода? Через какие счета: 90 или 84?"""
             
-            formatted_results = searcher.search(test_query, num_results=3)
+            formatted_results = searcher.search(test_query, num_results=7)
 
             print("\n--- РЕЗУЛЬТАТ (отформатированная строка для LLM) ---")
-            print(formatted_results)
+            for d in formatted_results: 
+                print(d.get("title"), d.get("url"))
             print("-------------------------------------------------")
                 
         except ValueError as e:
