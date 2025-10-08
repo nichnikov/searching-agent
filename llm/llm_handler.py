@@ -1,5 +1,6 @@
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
+from langfuse.langchain import CallbackHandler
 
 class LLMHandler:
     """Класс для работы с языковой моделью."""
@@ -9,6 +10,7 @@ class LLMHandler:
             raise ValueError("Необходимо указать base_url, api_key и model_name для LLM.")
         try:
             self.llm = ChatOpenAI(base_url=base_url, api_key=api_key, model=model_name)
+            self.langfuse_handler = CallbackHandler()
             print(f"LLM-клиент для модели '{model_name}' успешно инициализирован.")
         except Exception as e:
             print(f"Ошибка при инициализации LLM-клиента: {e}")
@@ -24,10 +26,6 @@ class LLMHandler:
         Returns:
             Ответ модели в виде строки.
         """
-        try:
-            messages = [HumanMessage(content=prompt)]
-            ai_msg = self.llm.invoke(messages)
-            return ai_msg.content
-        except Exception as e:
-            print(f"Произошла ошибка при обращении к LLM: {e}")
-            return "Ошибка при получении ответа от языковой модели."
+        messages = [HumanMessage(content=prompt)]
+        ai_msg = self.llm.invoke(messages, config={"callbacks": [self.langfuse_handler]})
+        return ai_msg.content
