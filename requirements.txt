@@ -4,6 +4,7 @@ langchain-community
 google-search-results
 langchain-core
 langchain-openai
+langfuse
 python-dotenv
 Scrapy
 scrapy-playwright

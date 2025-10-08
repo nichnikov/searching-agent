@@ -13,7 +13,9 @@ from llm.llm_handler import LLMHandler
 from searchers.combined_web_searcher import CombinedWebSearcher
 from searchers.yandex_searcher import YandexSearcher
 from utils.formatters import format_search_results
-
+from langfuse import get_client
+from langfuse.langchain import CallbackHandler
+from langfuse import observe
 # Убедитесь, что langgraph установлен: pip install langgraph
 from langgraph.graph import StateGraph, END
 from prompts.templates import (
@@ -25,6 +27,9 @@ from prompts.templates import (
 
 
 # --- Определение состояния графа ---
+
+langfuse = get_client()
+langfuse_handler = CallbackHandler()
 
 class GraphState(TypedDict):
     """
@@ -87,6 +92,7 @@ class LangGraphPipeline:
 
     # --- УЗЛЫ ГРАФА ---
 
+    @observe
     def generate_search_queries_node(self, state: GraphState) -> Dict[str, Any]:
         """Генерирует поисковые запросы на основе запроса пользователя и обратной связи."""
         print("\n" + "="*20 + " ЭТАП 1: ГЕНЕРАЦИЯ ПОИСКОВЫХ ЗАПРОСОВ " + "="*20)
@@ -102,6 +108,7 @@ class LangGraphPipeline:
         print(f"Сгенерированные запросы: {queries}")
         return {"search_queries": queries, "rephrasing_count": state['rephrasing_count'] + 1}
 
+    @observe
     def web_search_node(self, state: GraphState) -> Dict[str, Any]:
         """Выполняет поиск в вебе по сгенерированным запросам."""
         print("\n" + "="*20 + " ЭТАП 2: ПОИСК В ИНТЕРНЕТЕ " + "="*20)
@@ -121,6 +128,7 @@ class LangGraphPipeline:
         # Добавляем новые результаты к уже существующим
         return {"search_results": previous_results + all_results}
 
+    @observe
     def analyze_results_node(self, state: GraphState) -> Dict[str, Any]:
         """Анализирует результаты поиска на релевантность."""
         print("\n" + "="*20 + " ЭТАП 3: АНАЛИЗ РЕЗУЛЬТАТОВ " + "="*20)
@@ -157,6 +165,7 @@ class LangGraphPipeline:
             print("[ОШИБКА] Не удалось распарсить JSON от LLM-анализатора.")
             return {"relevant_documents": [], "feedback": "Ошибка анализа результатов."}
 
+    @observe
     def generate_final_answer_node(self, state: GraphState) -> Dict[str, Any]:
         """Генерирует финальный ответ на основе релевантных документов."""
         print("\n" + "="*20 + " ЭТАП 4: ГЕНЕРАЦИЯ ФИНАЛЬНОГО ОТВЕТА " + "="*20)
@@ -172,7 +181,7 @@ class LangGraphPipeline:
         return {"final_answer": answer}
 
     # --- УСЛОВНЫЕ ПЕРЕХОДЫ ---
-
+    @observe
     def decide_next_step(self, state: GraphState) -> str:
         """Решает, какой узел будет следующим."""
         print("\n" + "="*20 + " ПРИНЯТИЕ РЕШЕНИЯ " + "="*20)
@@ -208,7 +217,7 @@ class LangGraphPipeline:
         
         # ИСПОЛЬЗУЕМ .invoke() ДЛЯ ПОЛУЧЕНИЯ ПОЛНОГО ФИНАЛЬНОГО СОСТОЯНИЯ
         # Все print() внутри узлов будут выведены в консоль в процессе выполнения.
-        final_state = self.graph.invoke(initial_state)
+        final_state = self.graph.invoke(initial_state, config={"callbacks": [langfuse_handler]})
 
         # Если в конце работы граф остановился из-за ошибки или лимита попыток,
         # а финальный ответ не был сгенерирован, установим заглушку.
