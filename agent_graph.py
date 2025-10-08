@@ -19,48 +19,7 @@ from prompts.templates import (
 
 # --- Вспомогательные классы для поиска ---
 # Для полноты примера, добавим BaseSearcher, который должен быть в .base_searcher
-'''
-class BaseSearcher(ABC):
-    @abstractmethod
-    def search(self, query: str, **kwargs: Any) -> List[Dict[str, Any]]:
-        pass
 
-# Класс MultiQuerySearcher, который мы интегрируем
-class MultiQuerySearcher:
-    """
-    Класс для выполнения серии поисковых запросов через CombinedWebSearcher
-    и агрегации всех результатов в единый уникальный список.
-    """
-    def __init__(self, combined_searcher: CombinedWebSearcher):
-        if not isinstance(combined_searcher, CombinedWebSearcher):
-            raise TypeError("Необходимо передать экземпляр CombinedWebSearcher.")
-        self.combined_searcher = combined_searcher
-        print("Мульти-поисковик инициализирован.")
-
-    def search_all(self, queries: List[str], **kwargs: Any) -> List[Dict[str, Any]]:
-        """
-        Выполняет поиск по каждому запросу из списка и возвращает
-        единый дедуплицированный список результатов.
-        """
-        aggregated_results = []
-        seen_urls = set()
-
-        print(f"Начинаем мульти-поиск по {len(queries)} запросам...")
-        
-        for query in queries:
-            # CombinedWebSearcher сам дедуплицирует результаты для одного запроса
-            results_for_current_query = self.combined_searcher.search(query, **kwargs)
-            
-            # Добавляем в общий список, проверяя уникальность между запросами
-            for item in results_for_current_query:
-                url = item.get("url")
-                if url and url not in seen_urls:
-                    seen_urls.add(url)
-                    aggregated_results.append(item)
-                    
-        return aggregated_results
-
-'''
 # --- Определение состояния графа (без изменений) ---
 
 class GraphState(TypedDict):
