@@ -29,6 +29,7 @@ DEFAULT_MODEL = "google/gemini-2.5-pro"
 DEFAULT_QUERY = (query)
 DEFAULT_SECTIONS = "law,recommendations"
 DEFAULT_LIMIT = 5
+MAX_RETRIES = 1
 
 # --- Настройки для Yandex Search API ---
 YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
