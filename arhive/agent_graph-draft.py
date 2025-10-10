@@ -12,6 +12,7 @@ from searchers.base_searcher import BaseSearcher
 from searchers.combined_web_searcher import CombinedWebSearcher
 from searchers.yandex_searcher import YandexSearcher
 from utils.formatters import format_search_results # Сохранено для потенциального использования или отладки
+from utils.str2dir import structure_text_to_json_list
 from langgraph.graph import StateGraph, END
 from prompts.templates import (
     SEARCH_QUERY_GENERATOR_PROMPT,
@@ -43,8 +44,9 @@ class LangGraphPipeline:
         graph = StateGraph(GraphState)
         graph.add_node("generate_queries", self.generate_search_queries_node)
         graph.add_node("search_and_analyze_per_query", self.search_and_analyze_per_query_node)
-        graph.add_node("generate_answer", self.generate_final_answer_node)
+        # graph.add_node("generate_answer", self.generate_final_answer_node)
         
+        '''
         graph.set_entry_point("generate_queries")
         graph.add_edge("generate_queries", "search_and_analyze_per_query")
         
@@ -52,7 +54,9 @@ class LangGraphPipeline:
             "search_and_analyze_per_query",
             self.decide_next_step,
             {"RETRY": "generate_queries", "CONTINUE": "generate_answer", "END": END}
-        )
+        )'''
+        graph.add_node("generate_answer", self.generate_final_answer_node)
+        # graph.add_edge("search_and_analyze_per_query", "generate_answer")
         graph.add_edge("generate_answer", END)
         return graph.compile()
 
@@ -123,21 +127,23 @@ class LangGraphPipeline:
             )
 
             try:
-                llm_analysis = json.loads(response_from_llm)
+                llm_analysis_list = structure_text_to_json_list(response_from_llm)
+                # response_from_llm_cleared = structure_text_to_json_list(response_from_llm)
+                # llm_analysis = json.loads(response_from_llm_cleared)
 
-                # Простая валидация структуры ответа LLM
-                if all(k in llm_analysis for k in ["answer", "data"]) and \
-                   isinstance(llm_analysis["data"], dict) and \
-                   all(k in llm_analysis["data"] for k in ["urls", "title", "fragment"]):
-                    
-                    # Добавляем оригинальный поисковый запрос для контекста
-                    llm_analysis['original_search_query_context'] = single_query
-                    current_batch_qa_results.append(llm_analysis)
-                    print(f"✅ Анализ для запроса '{single_query}' выполнен. Ответ получен.")
-                else:
-                    print(f"❌ LLM вернул некорректный JSON (неполная структура) для запроса '{single_query}'. Пропускаю. Ответ: {llm_analysis}")
+                for llm_analysis_dict in llm_analysis_list:
+                    # Простая валидация структуры ответа LLM
+                    if all(k in llm_analysis_dict for k in ["answer", "data"]) and isinstance(llm_analysis_dict["data"], list):
+                        # Добавляем оригинальный поисковый запрос для контекста
+                        llm_analysis_dict['original_search_query_context'] = single_query
+                        current_batch_qa_results.append(llm_analysis_dict)
+                        print(f"✅ Анализ для запроса '{single_query}' выполнен. Ответ получен.")
+                    else:
+                        print(f"❌ LLM вернул некорректный JSON (неполная структура) для запроса '{single_query}'. Пропускаю. Ответ: {llm_analysis_list}")
+
             except json.JSONDecodeError as e:
                 print(f"❌ Не удалось распарсить JSON от LLM для запроса '{single_query}': {e}. Ответ LLM: '{response_from_llm}'. Пропускаю.")
+
             except Exception as e:
                 print(f"❌ Непредвиденная ошибка при обработке ответа LLM для запроса '{single_query}': {e}. Пропускаю.")
 
@@ -145,15 +151,10 @@ class LangGraphPipeline:
         print(f"Собрано {len(current_batch_qa_results)} новых Q&A пар в текущем батче. Всего: {len(all_qa_results)}.")
 
         feedback_message = ""
-        meaningful_qa_in_current_batch = any(
-            item.get("answer") and item["answer"].strip() and 
-            item.get("data", {}).get("urls") and item["data"]["urls"].strip()
-            for item in current_batch_qa_results
-        )
 
-        if not meaningful_qa_in_current_batch and len(all_qa_results) == 0:
+        if not current_batch_qa_results and len(all_qa_results) == 0:
             feedback_message = "Поиск и анализ не дали ни одной полезной Q&A пары."
-        elif not meaningful_qa_in_current_batch and len(all_qa_results) > 0:
+        elif not current_batch_qa_results and len(all_qa_results) > 0:
             feedback_message = "Текущая партия запросов не дала новых полезных Q&A пар, но предыдущие попытки что-то нашли."
         else: 
             feedback_message = "Получены новые Q&A пары."
