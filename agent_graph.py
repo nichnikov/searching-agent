@@ -202,32 +202,54 @@ class LangGraphPipeline:
         return {"final_answer": answer}
 
     def decide_next_step(self, state: GraphState) -> str:
-        """Определяет следующий шаг: продолжить, повторить или завершить."""
+        """
+        Определяет следующий шаг: продолжить, повторить или завершить.
+        Валидирует каждый Q&A результат и игнорирует некорректные.
+        """
         print("\n" + "="*20 + " ПРИНЯТИЕ РЕШЕНИЯ " + "="*20)
         qa_results = state.get('qa_results', [])
+        
+        # Создаем новый список для хранения только валидных результатов
+        normalized_qa_results = []
+        
+        # Итерируемся по каждому полученному Q&A результату
+        for qa in qa_results:
+            try:
+                # Проверяем, является ли элемент уже Pydantic моделью
+                if isinstance(qa, LLMAnalysis):
+                    normalized_qa_results.append(qa)
+                # Если это словарь, пытаемся его провалидировать
+                else:
+                    validated_qa = LLMAnalysis(**qa)
+                    normalized_qa_results.append(validated_qa)
+            except ValidationError as e:
+                # Если валидация одного конкретного элемента не удалась,
+                # выводим сообщение об этом и просто игнорируем его (пропускаем).
+                print(f"⚠️ Ошибка валидации одного из Q&A результатов. Элемент будет проигнорирован. Ошибка: {e}")
+                print(f"   Проблемный элемент: {qa}")
+                # `continue` переходит к следующему элементу в цикле qa_results
+                continue
 
-        # Преобразуем dict в LLMAnalysis, если нужно
-        normalized_qa_results = [qa if isinstance(qa, LLMAnalysis) else LLMAnalysis(**qa)
-                                 for qa in qa_results]
+        # Важно: обновляем состояние графа, чтобы следующие узлы работали
+        # только с очищенным, валидным списком.
+        state['qa_results'] = normalized_qa_results
 
-
-        # Проверяем, есть ли хотя бы один содержательный ответ
+        # Проверяем, есть ли хотя бы один содержательный ответ ПОСЛЕ очистки
         meaningful_qa_found = any(
             qa.answer.strip() and any(ds.url.strip() for ds in qa.data) for qa in normalized_qa_results
         )
 
         if meaningful_qa_found:
-            print(f"✅ Найдено {len(qa_results)} содержательных Q&A пар. Перехожу к генерации финального ответа.")
+            print(f"✅ Найдено {len(normalized_qa_results)} содержательных Q&A пар. Перехожу к генерации финального ответа.")
             return "CONTINUE"
 
         if state['rephrasing_count'] >= self.max_retries:
             print("❌ Достигнут лимит попыток. Завершаю работу.")
             return "END"
         
-        # УЛУЧШЕНО: Формируем более полезную обратную связь
         feedback = "Предыдущие поисковые запросы не дали релевантных результатов. Попробуй сгенерировать запросы под другим углом, используя другие ключевые слова."
         print(f"⚠️ Не найдено полезных Q&A пар. Попытка №{state['rephrasing_count'] + 1}. Возвращаюсь к переформулированию запросов.")
-        state['feedback'] = feedback # Сохраняем фидбэк для следующего шага
+        state['feedback'] = feedback
         return "RETRY"
 
     def run(self, query: str):
