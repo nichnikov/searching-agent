@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Импортируем модули из нашей структуры проекта
 import config
-from llm.llm_handler import LLMHandler
+from llm.llm_processor import LLMHandler
 from searchers.base_searcher import BaseSearcher 
 from searchers.combined_web_searcher import CombinedWebSearcher
 from searchers.yandex_searcher import YandexSearcher

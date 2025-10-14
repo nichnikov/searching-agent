@@ -2,7 +2,7 @@ import argparse
 from typing import List, Dict, Any
 
 import config
-from llm.llm_handler import LLMHandler
+from llm.llm_processor import LLMHandler
 from prompts.templates import GENERATE_ANSWER_PROMPT_FIRST, COMPARE_ANSWERS_PROMPT_SECOND
 from searchers.combined_web_searcher import CombinedWebSearcher
 from searchers.internal_searcher import InternalSearcher

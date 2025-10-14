@@ -12,3 +12,4 @@ yandex_search_api==0.1.8
 lxml[html_clean]
 langgraph
 # pydantic json-repair
+tiktoken

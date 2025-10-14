@@ -32,7 +32,7 @@ class LLMHandler:
     #         print("Langfuse не сконфигурирован. Пропускаем инициализацию.")
     #         return None
 
-    def get_response(self, prompt: str, temperature: float = 0.7, max_tokens: int = 500000, 
+    def get_response(self, prompt: str, temperature: float = 0.7, max_tokens: int = 25000, 
                      response_format: Optional[Dict[str, str]] = None) -> str:
         """
         Отправляет запрос к LLM и возвращает ответ.

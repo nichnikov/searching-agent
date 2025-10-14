@@ -2,7 +2,7 @@ import argparse
 from typing import List, Dict, Any
 
 import config
-from llm.llm_handler import LLMHandler
+from llm.llm_processor import LLMHandler
 from prompts.templates import EDITOR_AGENT_PROMPT #ACCOUNTING_AGENT_PROMPT COMPARE_ANSWERS_PROMPT_SECOND больше не нужен
 from searchers.combined_web_searcher import CombinedWebSearcher
 # Для ясности переименуем импорт, чтобы было понятно, что это поисковик Google
